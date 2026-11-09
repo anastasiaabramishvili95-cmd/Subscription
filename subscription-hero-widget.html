@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Subscription Overview — Template Atelier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--ivory:#F8F6F0;--soft:#FDFCF9;--stone:#EAE5DB;--gold:#B49A68;--olive:#858B78;--ink:#33332F;--mute:#77776C}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:transparent;height:100%}
+body{font-family:'Inter',system-ui,sans-serif;color:var(--ink);display:flex;align-items:center;justify-content:center;padding:14px}
+body.ivory{background:var(--ivory)}
+.wrap{width:100%;max-width:600px;min-height:260px;display:grid;grid-template-columns:1.05fr 1fr;gap:26px;align-items:center}
+.eyebrow{font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);font-weight:500}
+.big{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:64px;line-height:1;margin:10px 0 4px;letter-spacing:-.01em}
+.big small{font-size:28px;color:var(--gold);margin-right:3px;vertical-align:top;position:relative;top:6px}
+.sub{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--mute)}
+.rule{display:flex;align-items:center;gap:10px;margin:18px 0 14px;color:var(--gold);font-size:11px}
+.rule::before,.rule::after{content:"";height:1px;background:var(--stone);flex:1}
+.year{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:500}
+.year span{font-size:11px;font-family:'Inter';letter-spacing:.18em;text-transform:uppercase;color:var(--mute);margin-left:8px}
+.card{background:rgba(253,252,249,.82);border:1px solid var(--stone);border-radius:18px;padding:20px 22px;backdrop-filter:blur(6px)}
+.next{display:flex;justify-content:space-between;align-items:flex-end;margin-top:8px}
+.name{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:500;line-height:1.1}
+.date{font-size:11px;color:var(--mute);margin-top:4px;letter-spacing:.06em}
+.days{font-family:'Cormorant Garamond',serif;font-size:38px;color:var(--gold);line-height:1;text-align:right}
+.days em{display:block;font-style:normal;font-family:'Inter';font-size:9px;letter-spacing:.24em;text-transform:uppercase;color:var(--mute);margin-top:4px}
+.list{margin-top:14px;border-top:1px solid var(--stone)}
+.row{display:flex;justify-content:space-between;font-size:12px;padding:9px 0;border-bottom:1px solid var(--stone);color:var(--ink)}
+.row:last-child{border-bottom:0;padding-bottom:0}
+.row span:last-child{color:var(--olive)}
+.empty{font-size:13px;color:var(--mute);padding:8px 0}
+.foot{grid-column:1/-1;text-align:center;font-size:9px;letter-spacing:.3em;text-transform:uppercase;color:var(--mute);opacity:.8}
+@media(max-width:500px){.wrap{grid-template-columns:1fr;gap:18px}.big{font-size:52px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div>
+    <div class="eyebrow">Monthly spend</div>
+    <div class="big"><small id="cur">$</small><span id="monthly">0</span></div>
+    <div class="sub">per month</div>
+    <div class="rule">✦</div>
+    <div class="year"><span id="yearly">0</span><span>per year</span></div>
+  </div>
+  <div class="card">
+    <div class="eyebrow">Next renewal</div>
+    <div class="next">
+      <div><div class="name" id="n1">—</div><div class="date" id="d1"></div></div>
+      <div class="days" id="c1">—<em>until renewal</em></div>
+    </div>
+    <div class="list" id="list"></div>
+  </div>
+  <div class="foot">Template Atelier · Thoughtful systems. Better everyday living.</div>
+</div>
+
+<script>
+/* ---- HOW TO CUSTOMISE (URL parameters) ----
+   ?m=148.90            monthly total
+   &c=₾                 currency symbol
+   &r=Netflix|2026-11-14,Spotify|2026-11-20,iCloud|2026-12-02   renewals (Name|YYYY-MM-DD)
+   &bg=ivory            ivory background (default is transparent)
+   Past dates roll forward month by month automatically. */
+(function(){
+  var p=new URLSearchParams(location.search);
+  if(p.get('bg')==='ivory')document.body.classList.add('ivory');
+  var cur=p.get('c')||'$';
+  var m=parseFloat((p.get('m')||'').replace(',','.'));
+  function iso(d){return d.toISOString().slice(0,10)}
+  var t=new Date();
+  function plus(n){var d=new Date(t);d.setDate(d.getDate()+n);return iso(d)}
+  var raw=p.get('r')||('Netflix|'+plus(3)+',Spotify|'+plus(9)+',iCloud|'+plus(17)+',Notion|'+plus(24));
+  if(isNaN(m))m=148.9;
+  function fmt(n){return n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}
+  document.getElementById('cur').textContent=cur;
+  document.getElementById('monthly').textContent=fmt(m);
+  document.getElementById('yearly').textContent=cur+fmt(m*12);
+
+  var MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function build(){
+    var today=new Date();today.setHours(0,0,0,0);
+    var items=raw.split(',').map(function(s){
+      var a=s.split('|');if(a.length<2)return null;
+      var d=new Date(a[1].trim()+'T00:00:00');if(isNaN(d))return null;
+      var guard=0;while(d<today&&guard++<600){d.setMonth(d.getMonth()+1)}
+      return{name:a[0].trim(),date:d,days:Math.round((d-today)/864e5)};
+    }).filter(Boolean).sort(function(a,b){return a.date-b.date});
+    function when(n){return n===0?'Today':n===1?'Tomorrow':n+' days'}
+    function ds(d){return d.getDate()+' '+MONTHS[d.getMonth()]}
+    var list=document.getElementById('list');list.innerHTML='';
+    if(!items.length){document.getElementById('n1').textContent='No renewals';return}
+    var f=items[0];
+    document.getElementById('n1').textContent=f.name;
+    document.getElementById('d1').textContent=ds(f.date);
+    document.getElementById('c1').innerHTML=(f.days<=1?when(f.days):f.days)+'<em>'+(f.days<=1?'renewal':'days until renewal')+'</em>';
+    items.slice(1,4).forEach(function(i){
+      var r=document.createElement('div');r.className='row';
+      r.innerHTML='<span></span><span></span>';
+      r.children[0].textContent=i.name;
+      r.children[1].textContent=ds(i.date)+' · '+when(i.days);
+      list.appendChild(r);
+    });
+  }
+  build();setInterval(build,60000);
+})();
+</script>
+</body>
+</html>
